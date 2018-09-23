@@ -14,6 +14,7 @@ use Getopt::Long;
 use v5.10.1;
 no warnings 'experimental';
 
+use constant VERSION => "1.0.0";
 # Ticketing system prefix (Like for Jira/Mantis/etc)
 use constant TKT_PREFIX  => 'TKT-';
 # Release file prefix
@@ -33,36 +34,59 @@ GetOptions ("h|help"          => \$helpMe,
             "t|ticket=s"      => \$ticket,
             "v|version=s"     => \$version);
 
-# Handle user request for help before any other operations.
+# Handle user request for help before any other operations are done.
 if (defined $helpMe) {
     helpMe();
     exit 1;
 }
 
-# Ticket is mandatory.
-if (!defined $ticket){
-    printError('TICKET');
-    exit 0;
-}
+MAIN:
+    printHeader();
 
-# Establish the working environment: use the constants defined above unless the
-# user has specified new environment variables.
-if (!defined $sqlDir) { $sqlDir  = SQL_DIR; }
-if (!defined $relDir) { $relDir  = RELEASE_DIR; }
-if (!defined $version){ $version = RELEASE_VER; }
+    # Ticket is mandatory.
+    while (!defined $ticket or $ticket eq '' or $ticket !~ /^\d*$/){
+        $ticket = getTicket();
+    }
+    # We have our ticket now.
+    print "\nThe ticket is: $ticket \n";
 
-# Let's begin
-print Dumper($helpMe, $sqlDir, $relDir, $ticket, $version);
+    # Establish the working environment: use the constants defined above unless the
+    # user has specified new environment variables.
+    if (!defined $sqlDir) { $sqlDir  = SQL_DIR; }
+    if (!defined $relDir) { $relDir  = RELEASE_DIR; }
+    if (!defined $version){ $version = RELEASE_VER; }
 
-print "\n\n\tAppending SQL in SQL file: ";
-print "\n\t  ".$sqlDir.TKT_PREFIX.$ticket.".sql\n\n";
-print "\tTo SQL Release file: ";
-print "\n\t  ".$relDir.$version."/".RF_PREFIX.$version.".sql\n\n";
+    # Let's begin
+    print Dumper($sqlDir, $relDir, $version);
 
-print "\tIs this correct [y/n]?";
+    print "\n\n\tAppending SQL in SQL file: ";
+    print "\n\t  ".$sqlDir.TKT_PREFIX.$ticket.".sql\n\n";
+    print "\tTo SQL Release file: ";
+    print "\n\t  ".$relDir.$version."/".RF_PREFIX.$version.".sql\n\n";
+
+    print "\tIs this correct [y/n]?";
+
 #-------------------------------------------------------------------------------
 # SUBROUTINES
 #-------------------------------------------------------------------------------
+sub printHeader {
+    #---------------------------------------------------------------------------
+    #** @method public printHeader
+    #   Prints the program header to the screen.
+    # Parameters:
+    #   None
+    # Returns:
+    #   Nothing
+    #*
+    #---------------------------------------------------------------------------
+    print "\n";
+    print '═'x40;
+    print "\nThis script will concatenate the\n";
+    print "ticket's SQL file to the release SQL file\n\n";
+    print "\n";
+    print $0."\nVersion: " . VERSION. "\n\n";
+}
+
 sub helpMe {
     #---------------------------------------------------------------------------
     #** @method public helpMe
@@ -102,8 +126,8 @@ sub helpMe {
 
 sub printError {
     #---------------------------------------------------------------------------
-    #** @method public helpMe
-    #   Displays help information on this script.
+    #** @method public printError
+    #   Error message handling.
     # Parameters:
     #   eClass - STRING : The class of error that induced the problem.
     # Returns:
@@ -114,15 +138,41 @@ sub printError {
     given ($eClass) {
         when ('TICKET'){
             print "\n\n";
-            print "[ERROR]: No ticket number was entered.\n";
-            print "         You MUST enter a ticket.\n";
+            print "[ERROR]: The ticket you entered was not numeric.\n";
+            print "         Enter only the numeric part of the ticket!\n\n";
         }
         default {
             print "\n\n";
             print "[ERROR]: An unspecified fatal error occurred.\n";
-            print "         Please consult --help for assistance.\n";
+            print "         Please consult --help for assistance.\n\n";
         }
     }
+}
+
+sub getTicket {
+    #---------------------------------------------------------------------------
+    #** @method public printError
+    #   Continually reprompt the user for a valid ticket number
+    # Parameters:
+    #   NONE
+    # Returns:
+    #   ticket  INT : The ticket number the script will use from here on out.
+    #*
+    #---------------------------------------------------------------------------
+    my $ticket = undef;
+    if (!defined $ticket) {
+        print "Please enter the ticket number: ";
+        $ticket = <>;
+    }
+
+    chomp $ticket;
+
+    if ( $ticket eq '' or $ticket !~ /^\d*$/ ) {
+        printError('TICKET');
+        my $ticket = undef; # Undefine it to reprompt.
+    }
+
+    return $ticket;
 }
 
 1;
