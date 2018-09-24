@@ -1,6 +1,8 @@
 # devops-sql-release
 Perl based DEVOPS tool for automating release SQL script building from individual team tickets
 
+![](devops-sql-release.gif)
+
 The intent of this tool is to help automate building a SQL release candidate file for teams that have a development 
 database and a production database.
 
