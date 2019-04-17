@@ -46,7 +46,7 @@ GetOptions ("h|help"          => \$helpMe,
 # Handle user request for help before any other operations are done.
 if (defined $helpMe) {
     helpMe();
-    exit 1;
+    exit 0;
 }
 
 MAIN:
